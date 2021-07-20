@@ -1,0 +1,100 @@
+version: '3'
+
+services:
+  #Reporting database
+  cpt-reporting-db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crypto-profit-tracker-reporting
+    ports:
+      - 5436:5432
+    networks:
+      - backend
+  #Operational database
+  cpt-operational-db:
+    image: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: crypto-profit-tracker
+    ports:
+      - 5435:5432
+    networks:
+      - backend
+  #Zookeeper
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:5.5.3
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#  #Kafka cluster
+#  kafka:
+#    image: confluentinc/cp-enterprise-kafka:5.5.3
+#    depends_on: [zookeeper]
+#    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#      KAFKA_JMX_PORT: 9991
+#    links:
+#      - zookeeper
+#    ports:
+#      - 9092:9092
+#    networks:
+#      - backend
+  #Kafka cluster
+#  kafka:
+#    image: landoop/fast-data-dev:cp3.3.0
+#    environment:
+#      #      ADV_HOST: 127.0.0.1         # Change to 192.168.99.100 if using Docker Toolbox
+#      RUNTESTS: 0                 # Disable Running tests so the cluster starts faster
+#      FORWARDLOGS: 0              # Disable running 5 file source connectors that bring application logs into Kafka topics
+#      SAMPLEDATA: 0               # Do not create sea_vessel_position_reports, nyc_yellow_taxi_trip_data, reddit_posts topics with sample Avro records.
+#    ports:
+#      - 2181:2181                 # Zookeeper
+#      - 3030:3030                 # Landoop UI
+#      - 8081-8083:8081-8083       # REST Proxy, Schema Registry, Kafka Connect ports
+#      - 9581-9585:9581-9585       # JMX Ports
+#      - 9092:9092                 # Kafka Broker
+#    networks:
+#      - backend
+  #Debezium CDC
+  debezium:
+    image: debezium/connect:1.6
+    environment:
+#      BOOTSTRAP_SERVERS: kafka:9092
+      BOOTSTRAP_SERVERS: ec2-34-250-135-9.eu-west-1.compute.amazonaws.com:9092
+      GROUP_ID: 2
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+#      KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+#      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+#      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+#      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+#    depends_on: [kafka]
+    links:
+#      - kafka
+      - cpt-operational-db
+    ports:
+      - 8084:8083
+    networks:
+      - backend
+  #Kafka schema-registry
+#  schema-registry:
+#    image: confluentinc/cp-schema-registry:5.5.3
+#    environment:
+#      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181
+#      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+#      - SCHEMA_REGISTRY_LISTENERS=http://schema-registry:8081,http://localhost:8081
+#    depends_on: [zookeeper, kafka]
+#    links:
+#      - kafka
+#      - zookeeper
+#    networks:
+#      - backend
+networks:
+  backend:
