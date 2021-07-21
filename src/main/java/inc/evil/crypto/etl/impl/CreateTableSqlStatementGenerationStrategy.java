@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringJoiner;
 
 @Component
 public class CreateTableSqlStatementGenerationStrategy implements SqlStatementGenerationStrategy {
@@ -32,12 +33,12 @@ public class CreateTableSqlStatementGenerationStrategy implements SqlStatementGe
 
     private String createTable(CdcEvent event) {
         StringBuilder createTableSql = new StringBuilder("create table ");
-        createTableSql.append(event.getTableName()).append(" (");
+        createTableSql.append(event.getTableName()).append(" ");
+        StringJoiner columnDefinitions = new StringJoiner(", ", "(", ")");
         for (ColumnMetaData column : event.getColumns()) {
-            createTableSql.append(column.getName())
-                    .append(" ").append(makeSqlType(column.getType())).append(",");
+            columnDefinitions.add(column.getName() + " " + makeSqlType(column.getType()));
         }
-        createTableSql = new StringBuilder(createTableSql.substring(0, createTableSql.length() - 1)).append(")");
+        createTableSql.append(columnDefinitions);
         return createTableSql.toString();
     }
 

@@ -6,13 +6,14 @@ import java.util.StringJoiner;
 
 @Component
 public class InsertSqlStatementGenerationStrategy implements SqlStatementGenerationStrategy {
+
     @Override
     public String generate(CdcEvent event) {
-        StringJoiner columns = new StringJoiner(",", "(", ")");
+        StringJoiner columns = new StringJoiner(", ", " (", ")");
         for (ColumnMetaData column : event.getColumns()) {
             columns.add(column.getName());
         }
-        StringJoiner values = new StringJoiner(",", "(", ")");
+        StringJoiner values = new StringJoiner(", ", "(", ")");
         for (ColumnMetaData column : event.getColumns()) {
             values.add("'" + column.getValue() + "'");
         }

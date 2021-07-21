@@ -2,20 +2,22 @@ package inc.evil.crypto.etl.impl;
 
 import org.springframework.stereotype.Component;
 
+import java.util.StringJoiner;
+
 @Component
 public class UpdateSqlStatementGenerationStrategy implements SqlStatementGenerationStrategy {
+
     @Override
     public String generate(CdcEvent event) {
         ColumnMetaData primaryKey = getPrimaryKey(event);
         StringBuilder sql = new StringBuilder("update " + event.getTableName() + " set ");
+        StringJoiner changedColumns = new StringJoiner(", ");
         for (ColumnMetaData column : event.getColumns()) {
-            sql.append(column.getName()).append(" = ")
-                    .append("'")
-                    .append(column.getValue())
-                    .append("', ");
+            changedColumns.add(column.getName() + " = '" + column.getValue() + "'");
         }
-        sql = new StringBuilder(sql.substring(0, sql.length() - 2));
-        sql.append(" where ").append(primaryKey.getName()).append(" = '")
+        sql.append(changedColumns)
+                .append(" where ").append(primaryKey.getName())
+                .append(" = '")
                 .append(primaryKey.getValue())
                 .append("'");
         return sql.toString();
@@ -27,6 +29,9 @@ public class UpdateSqlStatementGenerationStrategy implements SqlStatementGenerat
     }
 
     private ColumnMetaData getPrimaryKey(CdcEvent event) {
+        if (event.getColumns().isEmpty()) {
+            throw new PrimaryKeyNotFoundException("Primary key for table: " + event.getTableName() + " was not found.");
+        }
         return event.getColumns()
                 .get(0);
     }
